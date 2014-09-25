@@ -1,0 +1,3 @@
+[submodule "hackday-projects/erlang-webmachine"]
+	path = hackday-projects/erlang-webmachine
+	url = https://github.com/seancribbs/restfest-todos
