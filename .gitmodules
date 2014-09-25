@@ -1,3 +1,9 @@
 [submodule "hackday-projects/erlang-webmachine"]
 	path = hackday-projects/erlang-webmachine
 	url = https://github.com/seancribbs/restfest-todos
+[submodule "hackday-projects/hyper-todo/ui"]
+	path = hackday-projects/hyper-todo/ui
+	url = https://github.com/hypergroup/hyper-todo-ui
+[submodule "hackday-projects/hyper-todo/api"]
+	path = hackday-projects/hyper-todo/api
+	url = https://github.com/hypergroup/hyper-todo-api
