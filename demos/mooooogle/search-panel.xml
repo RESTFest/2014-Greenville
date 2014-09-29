@@ -13,9 +13,8 @@
   </state>
   <parallel id="active">
     <state id="search-box" initial="waiting-for-input">
+      <transition event="input" target="processing-input"/>
       <state id="waiting-for-input">
-        <transition event="input" target="processing-input">
-        </transition>
       </state>
       <state id="processing-input">
         <transition cond="guards.isSignificantTextPresent()" target="suggestion-pending">
@@ -23,8 +22,6 @@
         <transition target="waiting-for-input"/>
       </state>
       <state id="suggestion-pending" initial="internal-suggestion-pending">
-        <transition event="input" target="processing-input">
-        </transition>
         <transition event="go" target="waiting-for-suggestions">
         </transition>
         <state id="internal-suggestion-pending">
@@ -45,7 +42,6 @@
           <script>actions.cleanupOutstandingFetchSuggestions();</script>
         </onexit>
         <transition event="suggestions-available" target="pick-suggestion"/>
-        <transition event="input" target="processing-input"/>
         <state id="waiting-a-bit">
           <onentry>
             <send delay="4s" event="server-slow" id="low-timer"/>
@@ -64,7 +60,6 @@
         <onexit>
           <script>actions.hideSuggestions();</script>
         </onexit>
-        <transition event="input" target="processing-input"/>
         <state id="pick-suggestion-no-choice">
           <transition event="choice-made" target="pick-suggestion-choice-made"/>
         </state>

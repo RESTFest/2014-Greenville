@@ -102,7 +102,10 @@ p {
   margin-top: -1px;
   height: 100%;
 }
-.type-parallel > .type-state > * {
+
+.type-parallel > .type-state > h2,
+.type-parallel > .type-state > .type-state,
+.type-parallel > .type-state > .type-parallel {
   display: none
 }
 
