@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<?xml-stylesheet  href="scxml-html.xsl" type="text/xsl"?>
+<scxml xmlns="http://www.w3.org/2005/07/scxml" initial="initial-default" version="0.9">
+  <datamodel>
+    <data id="actions"/>
+    <data id="guards"/>
+  </datamodel>
+  <state id="initial-default">
+    <transition event="init" target="active">
+      <assign expr="_event.data.guards || {}" location="guards"/>
+      <assign expr="_event.data.actions || {}" location="actions"/>
+    </transition>
+  </state>
+  <parallel id="active">
+    <state id="search-box" initial="waiting-for-input">
+      <state id="waiting-for-input">
+        <transition event="input" target="processing-input">
+        </transition>
+      </state>
+      <state id="processing-input">
+        <transition cond="guards.isSignificantTextPresent()" target="suggestion-pending">
+        </transition>
+        <transition target="waiting-for-input"/>
+      </state>
+      <state id="suggestion-pending" initial="internal-suggestion-pending">
+        <transition event="input" target="processing-input">
+        </transition>
+        <transition event="go" target="waiting-for-suggestions">
+        </transition>
+        <state id="internal-suggestion-pending">
+          <onentry>
+            <send delay="1s" event="go" id="suggestion-timer"/>
+          </onentry>
+          <onexit>
+            <cancel sendid="suggestion-timer"/>
+          </onexit>
+          <transition cond="guards.isSignificantTextPresent()" event="input" target="internal-suggestion-pending"/>
+        </state>
+      </state>
+      <state id="waiting-for-suggestions" initial="waiting-a-bit">
+        <onentry>
+          <script>actions.fetchSuggestions();</script>
+        </onentry>
+        <onexit>
+          <script>actions.cleanupOutstandingFetchSuggestions();</script>
+        </onexit>
+        <transition event="suggestions-available" target="pick-suggestion"/>
+        <transition event="input" target="processing-input"/>
+        <state id="waiting-a-bit">
+          <onentry>
+            <send delay="4s" event="server-slow" id="low-timer"/>
+          </onentry>
+          <onexit>
+            <cancel sendid="slow-timer"/>
+          </onexit>
+          <transition event="server-slow" target="slow-server"/>
+        </state>
+        <state id="slow-server"/>
+      </state>
+      <state id="pick-suggestion">
+        <onentry>
+          <script>actions.showSuggestions();</script>
+        </onentry>
+        <onexit>
+          <script>actions.hideSuggestions();</script>
+        </onexit>
+        <transition event="input" target="processing-input"/>
+        <state id="pick-suggestion-no-choice">
+          <transition event="choice-made" target="pick-suggestion-choice-made"/>
+        </state>
+        <state id="pick-suggestion-choice-made">
+          <transition event="choice-made" target="pick-suggestion-choice-made"/>
+        </state>
+      </state>
+    </state>
+    <state id="error-box" initial="noerror">
+      <state id="noerror">
+        <transition event="error" target="error">
+        </transition>
+      </state>
+      <state id="error">
+        <onentry>
+          <script>actions.showError();</script>
+          <send delay="5s" event="noerror" id="errortimeout"/>
+        </onentry>
+        <onexit>
+          <cancel sendid="errortimeout"/>
+        </onexit>
+        <transition event="noerror" target="noerror"/>
+        <transition event="error" target="error"/>
+      </state>
+    </state>
+  </parallel>
+</scxml>

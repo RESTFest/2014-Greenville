@@ -1,0 +1,196 @@
+<html>
+<head>
+  <title>REST Fest 2014 State Chart demo</title>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/require-jquery/0.25.0/require-jquery.min.js"></script>
+  <script src="statemachineify.js "></script>
+  <style>
+div {
+  font-family: sans-serif;
+}
+
+#cow, #deadcow {
+  position: absolute;
+  left: 10%;
+  bottom: 0%;
+  width: 30%;
+  z-index: 0;
+  transition:all 2s ease-in-out;
+  perspective: 800px;
+  perspective-origin: 50% 100px;
+}
+
+#deadcow {
+  opacity: 0;
+}
+
+div.state-slow-server #cow, 
+div.state-slow-server #deadcow {
+  opacity: 1;
+  transform:rotateZ(180deg);
+}
+
+#deadcow img {
+  width: 100%;
+}
+
+div.search-field {
+  margin: auto;
+  width: 10cm;
+  margin-top: 20%;
+}
+
+input { width: 100%; }
+
+div.state-suggestion-pending input {
+  background-image: url(waiting.gif);
+  background-repeat: no-repeat;
+  background-size: 1em;
+  background-position: 95% center;
+}
+div.state-waiting-for-suggestions input {
+  background-image: url(loading.gif);
+  background-repeat: no-repeat;
+  background-position: 95% center;
+}
+div.state-waiting-for-results {
+  background-color: red;
+}
+
+div.error-message {
+  background-color: red;
+  color: yellow;
+  font-weight: bold;
+  display: block;
+}
+div.state-error div.error-message {
+  display: block;
+}
+div.state-noerror div.error-message {
+  display: none;
+}
+div.suggestions {
+  display: none;
+  position: absolute;
+  background: white;
+  border: 1px solid black;
+}
+div.state-pick-suggestion div.suggestions {
+  display: block;
+}
+
+div.suggestions>div {
+  padding: 1mm;
+}
+div.suggestions>div+div {
+  border-top: 1px solid black;
+}
+  </style>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+
+  var actions = {};
+  var guards = {};
+
+  guards.isSignificantTextPresent = function() {
+    var v = this.selfie.querySelector("input").value;
+    if (typeof v !== 'string') return false;
+    return v.match(/^\s*$/) == null
+  }
+
+  actions.clear = function() {
+    console.log("Clearing input!");
+  };
+
+  actions.showError = function() {
+    var selfie = this.selfie;
+    selfie.querySelector(".error-message").textContent = selfie.lasterror;
+  }
+
+  actions.fetchSuggestions = function() {
+    var selfie = this.selfie;
+    var v = this.selfie.querySelector("input").value;
+    console.log("fetching suggestions");
+    selfie.outstandingXHR = setTimeout(function() {
+      delete selfie.outstandingXHR;
+      console.log("Sending signal that suggestions are available");
+      selfie.signal("suggestions-available");
+    }, 200 * (v.length));
+  };
+
+  actions.cleanupOutstandingFetchSuggestions = function() {
+    var selfie = this.selfie;
+    if (selfie.outstandingXHR) {
+      console.log("Cancelling the request to fetch suggestions");
+      // fake.  Not really. In reality we'd be cancelling the XHR...
+      clearTimeout(selfie.outstandingXHR)
+      delete selfie.oustandingXHR;
+    }
+  };
+
+
+  actions.showSuggestions = function() {
+    var v = this.selfie.querySelector("input").value;
+    $(".suggestions").empty().append(
+      "<div><b>" + v + "</b>uberthis</div>" +
+      "<div><b>" + v.toUpperCase() + "</b> bla bla</div>"
+     );
+    // faking it.  handled via CSS for now...
+  };
+
+  actions.hideSuggestions = function() {
+    // faking it.  handled via CSS for now...
+  };
+
+  $(".search-field").each(function() {
+    var selfie = this;
+    // opensearch attribute is mandatory ;)
+
+    this.opensearch = this.dataset.opensearch;
+    this.underTest = this.dataset.test;
+    this.underTest = this.underTest ? this.underTest.value : undefined;
+
+    actions.selfie = this;   // todo: leaks global across search pansl instance.
+    guards.selfie = this;
+
+    statemachineify(selfie, 'search-panel.xml', actions, guards);
+
+    this.querySelector("input").oninput = function() {
+      selfie.signal("input");
+    };
+    this.querySelector("input").onsearch = function() {
+      selfie.signal("action");
+    };
+  });
+
+
+});
+
+</script>
+
+</head>
+<body>
+  <div class="summary"><a href="search-panel.xml">State chart</a></div>
+  <div class="search-field" data-opensearch="opensearch.xml">
+    <img src="https://openclipart.org/image/300px/svg_to_png/194695/happy-cow.png" id="cow">
+    <div id="deadcow">
+      <img src="https://openclipart.org/image/300px/svg_to_png/194695/happy-cow.png">
+    </div>
+    <h1>Mooooooooooogle</h1>
+    <div class="search-root">
+      <div class="error-message"></div>
+      <div class="content">
+        <input placeholder="Search" class="searchbutton" type="search"></input>
+        <div class="suggestions">
+          Suggestions go here
+        </div>
+      </div>
+      <div class="additional-controls">
+        <!-- Additional controls would be rendered here, possibly hidden... -->
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
