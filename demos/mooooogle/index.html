@@ -99,27 +99,20 @@ $(document).ready(function() {
     return v.match(/^\s*$/) != null
   }
 
-  actions.clear = function() {
-    console.log("Clearing input!");
-  };
-
-  actions.showError = function() {
-    var selfie = this.selfie;
-    selfie.querySelector(".error-message").textContent = selfie.lasterror;
-  }
-
-  actions.fetchSuggestions = function() {
+  actions.fetch = function() {
     var selfie = this.selfie;
     var v = this.selfie.querySelector("input").value;
     console.log("fetching suggestions");
+    // We're actually faking the "HTTP request" here. In the real mooooogle, it will
+    // actually send an AJAX request and send the "results" signal when the results arrived.
     selfie.outstandingXHR = setTimeout(function() {
       delete selfie.outstandingXHR;
       console.log("Sending signal that suggestions are available");
-      selfie.signal("suggestions-available");
+      selfie.signal("results");
     }, 200 * (v.length));
   };
 
-  actions.cleanupOutstandingFetchSuggestions = function() {
+  actions.cancel = function() {
     var selfie = this.selfie;
     if (selfie.outstandingXHR) {
       console.log("Cancelling the request to fetch suggestions");
@@ -145,11 +138,6 @@ $(document).ready(function() {
 
   $(".search-field").each(function() {
     var selfie = this;
-    // opensearch attribute is mandatory ;)
-
-    this.opensearch = this.dataset.opensearch;
-    this.underTest = this.dataset.test;
-    this.underTest = this.underTest ? this.underTest.value : undefined;
 
     actions.selfie = this;   // todo: leaks global across search pansl instance.
     guards.selfie = this;
@@ -159,12 +147,7 @@ $(document).ready(function() {
     this.querySelector("input").oninput = function() {
       selfie.signal("input");
     };
-    this.querySelector("input").onsearch = function() {
-      selfie.signal("action");
-    };
   });
-
-
 });
 
 </script>

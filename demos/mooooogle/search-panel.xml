@@ -5,85 +5,58 @@
     <data id="actions"/>
     <data id="guards"/>
   </datamodel>
+
   <state id="initial-default">
-    <transition event="init" target="active">
+    <transition event="init" target="empty">
       <assign expr="_event.data.guards || {}" location="guards"/>
       <assign expr="_event.data.actions || {}" location="actions"/>
     </transition>
   </state>
-  <parallel id="active">
-    <state id="search-box" initial="waiting-for-input">
-      <transition event="input" target="processing-input"/>
-      <state id="waiting-for-input">
-      </state>
-      <state id="processing-input">
-        <transition cond="! guards.isEmpty()" target="suggestion-pending">
-        </transition>
-        <transition target="waiting-for-input"/>
-      </state>
-      <state id="suggestion-pending" initial="internal-suggestion-pending">
-        <transition event="go" target="waiting-for-suggestions">
-        </transition>
-        <state id="internal-suggestion-pending">
-          <onentry>
-            <send delay="1s" event="go" id="suggestion-timer"/>
-          </onentry>
-          <onexit>
-            <cancel sendid="suggestion-timer"/>
-          </onexit>
-          <transition cond="! guards.isEmpty()" event="input" target="internal-suggestion-pending"/>
-        </state>
-      </state>
-      <state id="waiting-for-suggestions" initial="waiting-a-bit">
-        <onentry>
-          <script>actions.fetchSuggestions();</script>
-        </onentry>
-        <onexit>
-          <script>actions.cleanupOutstandingFetchSuggestions();</script>
-        </onexit>
-        <transition event="suggestions-available" target="pick-suggestion"/>
-        <state id="waiting-a-bit">
-          <onentry>
-            <send delay="4s" event="server-slow" id="low-timer"/>
-          </onentry>
-          <onexit>
-            <cancel sendid="slow-timer"/>
-          </onexit>
-          <transition event="server-slow" target="slow-server"/>
-        </state>
-        <state id="slow-server"/>
-      </state>
-      <state id="pick-suggestion">
-        <onentry>
-          <script>actions.showSuggestions();</script>
-        </onentry>
-        <onexit>
-          <script>actions.hideSuggestions();</script>
-        </onexit>
-        <state id="pick-suggestion-no-choice">
-          <transition event="choice-made" target="pick-suggestion-choice-made"/>
-        </state>
-        <state id="pick-suggestion-choice-made">
-          <transition event="choice-made" target="pick-suggestion-choice-made"/>
-        </state>
-      </state>
+
+  <state id="empty">
+    <transition event="input" target="typing"/>
+  </state>
+
+  <state id="typing">
+    <onentry>
+      <send delay="1s" event="stopped-typing" id="stopped-typing-timer"/>
+    </onentry>
+    <onexit>
+      <cancel sendid="stopped-typing-timer"/>
+    </onexit>
+    <transition cond="guards.isEmpty()" target="empty"/>
+    <transition event="input" target="typing"/>
+    <transition event="stopped-typing" target="fetching"/>
+  </state>
+
+  <state id="fetching" initial="not-hinting">
+    <onentry>
+      <script>actions.fetch();</script>
+    </onentry>
+    <onexit>
+      <script>actions.cancel();</script>
+    </onexit>
+    <transition event="results" target="showing"/>
+    <transition event="input" target="typing"/>
+    <state id="not-hinting">
+      <onentry>
+        <send delay="4s" event="server-slow" id="server-slow-timer"/>
+      </onentry>
+      <onexit>
+        <cancel sendid="server-slow-timer"/>
+      </onexit>
+      <transition event="server-slow" target="hinting"/>
     </state>
-    <state id="error-box" initial="noerror">
-      <state id="noerror">
-        <transition event="error" target="error">
-        </transition>
-      </state>
-      <state id="error">
-        <onentry>
-          <script>actions.showError();</script>
-          <send delay="5s" event="noerror" id="errortimeout"/>
-        </onentry>
-        <onexit>
-          <cancel sendid="errortimeout"/>
-        </onexit>
-        <transition event="noerror" target="noerror"/>
-        <transition event="error" target="error"/>
-      </state>
-    </state>
-  </parallel>
+    <state id="slow-server"/>
+  </state>
+
+  <state id="showing">
+    <transition event="input" target="typing"/>
+    <onentry>
+      <script>actions.showSuggestions();</script>
+    </onentry>
+    <onexit>
+      <script>actions.hideSuggestions();</script>
+    </onexit>
+  </state>
 </scxml>
