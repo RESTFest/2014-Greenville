@@ -17,7 +17,7 @@
       <state id="waiting-for-input">
       </state>
       <state id="processing-input">
-        <transition cond="guards.isSignificantTextPresent()" target="suggestion-pending">
+        <transition cond="! guards.isEmpty()" target="suggestion-pending">
         </transition>
         <transition target="waiting-for-input"/>
       </state>
@@ -31,7 +31,7 @@
           <onexit>
             <cancel sendid="suggestion-timer"/>
           </onexit>
-          <transition cond="guards.isSignificantTextPresent()" event="input" target="internal-suggestion-pending"/>
+          <transition cond="! guards.isEmpty()" event="input" target="internal-suggestion-pending"/>
         </state>
       </state>
       <state id="waiting-for-suggestions" initial="waiting-a-bit">

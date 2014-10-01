@@ -93,10 +93,10 @@ $(document).ready(function() {
   var actions = {};
   var guards = {};
 
-  guards.isSignificantTextPresent = function() {
+  guards.isEmpty = function() {
     var v = this.selfie.querySelector("input").value;
     if (typeof v !== 'string') return false;
-    return v.match(/^\s*$/) == null
+    return v.match(/^\s*$/) != null
   }
 
   actions.clear = function() {
