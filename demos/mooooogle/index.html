@@ -23,8 +23,8 @@ div {
   opacity: 0;
 }
 
-div.state-slow-server #cow, 
-div.state-slow-server #deadcow {
+div.kill-cow #cow, 
+div.kill-cow #deadcow {
   opacity: 1;
   transform:rotateZ(180deg);
 }
@@ -36,18 +36,27 @@ div.state-slow-server #deadcow {
 div.search-field {
   margin: auto;
   width: 10cm;
-  margin-top: 20%;
+  margin-top: 10%;
 }
 
 input { width: 100%; }
 
-div.state-suggestion-pending input {
+/* These "state-" CSS classes are indirectly tying the UI to the
+ * design of the state machine.  IMHO the state machine should
+ * be free to design its own states, being able to refactor and
+ * introduce new states as needed.
+ *
+ * Left behind as a reminder how to NOT design UIs. See dead-cow
+ * to see how it's supposed to be done, as a formal part of the
+ * view interface, i.e. as an action.
+ */
+div.state-typing input {
   background-image: url(waiting.gif);
   background-repeat: no-repeat;
   background-size: 1em;
   background-position: 95% center;
 }
-div.state-waiting-for-suggestions input {
+div.state-fetching input {
   background-image: url(loading.gif);
   background-repeat: no-repeat;
   background-position: 95% center;
@@ -56,25 +65,13 @@ div.state-waiting-for-results {
   background-color: red;
 }
 
-div.error-message {
-  background-color: red;
-  color: yellow;
-  font-weight: bold;
-  display: block;
-}
-div.state-error div.error-message {
-  display: block;
-}
-div.state-noerror div.error-message {
-  display: none;
-}
 div.suggestions {
   display: none;
   position: absolute;
   background: white;
   border: 1px solid black;
 }
-div.state-pick-suggestion div.suggestions {
+div.show-suggestions div.suggestions {
   display: block;
 }
 
@@ -93,6 +90,8 @@ $(document).ready(function() {
   var actions = {};
   var guards = {};
 
+
+  // improved isEmpty ignores whitespace.
   guards.isEmpty = function() {
     var v = this.selfie.querySelector("input").value;
     if (typeof v !== 'string') return false;
@@ -117,11 +116,19 @@ $(document).ready(function() {
     if (selfie.outstandingXHR) {
       console.log("Cancelling the request to fetch suggestions");
       // fake.  Not really. In reality we'd be cancelling the XHR...
+      // Cancel the timeout instead ;-)
       clearTimeout(selfie.outstandingXHR)
       delete selfie.oustandingXHR;
     }
   };
 
+  actions.showHint = function() {
+    $(this.selfie).addClass("kill-cow");
+  };
+
+  actions.hideHint = function() {
+    $(this.selfie).removeClass("kill-cow");
+  };
 
   actions.showSuggestions = function() {
     var v = this.selfie.querySelector("input").value;
@@ -129,13 +136,14 @@ $(document).ready(function() {
       "<div><b>" + v + "</b>uberthis</div>" +
       "<div><b>" + v.toUpperCase() + "</b> bla bla</div>"
      );
-    // faking it.  handled via CSS for now...
+    $(this.selfie).addClass("show-suggestions");
   };
 
   actions.hideSuggestions = function() {
-    // faking it.  handled via CSS for now...
+    $(this.selfie).removeClass("show-suggestions");
   };
 
+  // initial set-up of the search field
   $(".search-field").each(function() {
     var selfie = this;
 
@@ -144,9 +152,15 @@ $(document).ready(function() {
 
     statemachineify(selfie, 'search-panel.xml', actions, guards);
 
-    this.querySelector("input").oninput = function() {
+    // Bind the input event from the input field to the input event of the state machine.
+    selfie.querySelector("input").oninput = function() {
       selfie.signal("input");
     };
+
+    // debug, for fun we want to show the active state in the UI...
+    $(selfie).on("internal-state", function(e) {
+      $('.state').text(selfie.classList.toString().replace(/search-field/,"").replace(/state-/g,''));
+    })
   });
 });
 
@@ -154,23 +168,17 @@ $(document).ready(function() {
 
 </head>
 <body>
-  <div class="summary"><a href="search-panel.xml">State chart</a></div>
+  <div class="summary"><a href="search-panel.xml">State chart</a> (currently in the <span class="state">?</span> state)</div>
   <div class="search-field" data-opensearch="opensearch.xml">
     <img src="https://openclipart.org/image/300px/svg_to_png/194695/happy-cow.png" id="cow">
     <div id="deadcow">
       <img src="https://openclipart.org/image/300px/svg_to_png/194695/happy-cow.png">
     </div>
     <h1>Mooooooooooogle</h1>
-    <div class="search-root">
-      <div class="error-message"></div>
-      <div class="content">
-        <input placeholder="Search" class="searchbutton" type="search"></input>
-        <div class="suggestions">
-          Suggestions go here
-        </div>
-      </div>
-      <div class="additional-controls">
-        <!-- Additional controls would be rendered here, possibly hidden... -->
+    <div class="content">
+      <input placeholder="Search" class="searchbutton" type="search"></input>
+      <div class="suggestions">
+        Suggestions go here
       </div>
     </div>
   </div>

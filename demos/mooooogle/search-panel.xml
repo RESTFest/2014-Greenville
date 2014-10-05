@@ -19,10 +19,10 @@
 
   <state id="typing">
     <onentry>
-      <send delay="1s" event="stopped-typing" id="stopped-typing-timer"/>
+      <send delay="0.5s" event="stopped-typing" id="timer"/>
     </onentry>
     <onexit>
-      <cancel sendid="stopped-typing-timer"/>
+      <cancel sendid="timer"/>
     </onexit>
     <transition cond="guards.isEmpty()" target="empty"/>
     <transition event="input" target="typing"/>
@@ -47,7 +47,14 @@
       </onexit>
       <transition event="server-slow" target="hinting"/>
     </state>
-    <state id="slow-server"/>
+    <state id="hinting">
+      <onentry>
+        <script>actions.showHint();</script>
+      </onentry>
+      <onexit>
+        <script>actions.hideHint();</script>
+      </onexit>
+    </state>
   </state>
 
   <state id="showing">
