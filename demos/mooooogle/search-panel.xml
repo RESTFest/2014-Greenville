@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<?xml-stylesheet  href="scxml-html.xsl" type="text/xsl"?>
+<scxml xmlns="http://www.w3.org/2005/07/scxml" initial="initial-default" version="0.9">
+  <datamodel>
+    <data id="actions"/>
+    <data id="guards"/>
+  </datamodel>
+
+  <state id="initial-default">
+    <transition event="init" target="empty">
+      <assign expr="_event.data.guards || {}" location="guards"/>
+      <assign expr="_event.data.actions || {}" location="actions"/>
+    </transition>
+  </state>
+
+  <state id="empty">
+    <transition event="input" target="typing"/>
+  </state>
+
+  <state id="typing">
+    <onentry>
+      <send delay="0.5s" event="stopped-typing" id="timer"/>
+    </onentry>
+    <onexit>
+      <cancel sendid="timer"/>
+    </onexit>
+    <transition cond="guards.isEmpty()" target="empty"/>
+    <transition event="input" target="typing"/>
+    <transition event="stopped-typing" target="fetching"/>
+  </state>
+
+  <state id="fetching" initial="not-hinting">
+    <onentry>
+      <script>actions.fetch();</script>
+    </onentry>
+    <onexit>
+      <script>actions.cancel();</script>
+    </onexit>
+    <transition event="results" target="showing"/>
+    <transition event="input" target="typing"/>
+    <state id="not-hinting">
+      <onentry>
+        <send delay="4s" event="server-slow" id="server-slow-timer"/>
+      </onentry>
+      <onexit>
+        <cancel sendid="server-slow-timer"/>
+      </onexit>
+      <transition event="server-slow" target="hinting"/>
+    </state>
+    <state id="hinting">
+      <onentry>
+        <script>actions.showHint();</script>
+      </onentry>
+      <onexit>
+        <script>actions.hideHint();</script>
+      </onexit>
+    </state>
+  </state>
+
+  <state id="showing">
+    <transition event="input" target="typing"/>
+    <onentry>
+      <script>actions.showSuggestions();</script>
+    </onentry>
+    <onexit>
+      <script>actions.hideSuggestions();</script>
+    </onexit>
+  </state>
+</scxml>
